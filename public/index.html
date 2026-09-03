@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tablero Informativo — Admisiones</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink: #1E2A3C;
+    --ink-deep: #141D2A;
+    --paper: #F7F5F0;
+    --card: #FFFFFF;
+    --brass: #B08A3E;
+    --brass-dark: #8C6C2E;
+    --text: #20242B;
+    --text-muted: #6B7280;
+    --line: #E4E0D6;
+    --radius: 4px;
+    --shadow: 0 2px 10px rgba(30,42,60,0.08), 0 1px 2px rgba(30,42,60,0.10);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'IBM Plex Sans',sans-serif;color:var(--text);background:var(--paper);}
+  h1,h2,h3,.serif{font-family:'Newsreader',serif;}
+  button{font-family:inherit;cursor:pointer;}
+  button:disabled{opacity:0.55;cursor:default;}
+  input,select,textarea{font-family:inherit;font-size:14px;}
+  :focus-visible{outline:2px solid var(--brass);outline-offset:2px;}
+  a{color:inherit;}
+
+  .topbar{
+    background:var(--ink);color:#EDEAE0;display:flex;align-items:center;gap:20px;
+    padding:14px 24px;border-bottom:3px solid var(--brass);
+  }
+  .topbar .brand{display:flex;flex-direction:column;line-height:1.1;}
+  .topbar .brand .name{font-family:'Newsreader',serif;font-weight:600;font-size:19px;}
+  .topbar .brand .sub{font-size:12px;color:#B7BFCB;margin-top:2px;}
+  .search{
+    flex:1;max-width:420px;display:flex;align-items:center;background:rgba(255,255,255,0.08);
+    border:1px solid rgba(255,255,255,0.16);border-radius:var(--radius);padding:7px 12px;gap:8px;
+  }
+  .search input{background:transparent;border:none;outline:none;color:#EDEAE0;width:100%;font-size:14px;}
+  .search input::placeholder{color:#8A93A3;}
+  .btn-new{
+    margin-left:auto;background:var(--brass);color:#1B1404;border:none;border-radius:var(--radius);
+    padding:10px 16px;font-weight:600;font-size:14px;white-space:nowrap;
+  }
+  .btn-new:hover{background:#C39B4A;}
+
+  .layout{display:flex;align-items:flex-start;min-height:calc(100vh - 61px);}
+  aside{width:250px;flex-shrink:0;background:var(--ink);color:#DCE1E8;min-height:calc(100vh - 61px);padding:20px 0;}
+  .cat-label{font-size:11px;letter-spacing:0.03em;color:#8A93A3;padding:0 20px 10px;}
+  .cat-item{display:flex;align-items:center;gap:10px;padding:9px 20px;cursor:pointer;border-left:3px solid transparent;font-size:14.5px;}
+  .cat-item:hover{background:rgba(255,255,255,0.05);}
+  .cat-item.active{background:rgba(255,255,255,0.07);border-left-color:var(--brass);}
+  .cat-dot{width:9px;height:9px;border-radius:2px;flex-shrink:0;}
+  .cat-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .cat-count{font-size:12px;color:#8A93A3;}
+  .cat-edit{opacity:0;background:none;border:none;color:#8A93A3;font-size:12px;padding:2px 4px;}
+  .cat-item:hover .cat-edit{opacity:1;}
+  .cat-rename-input{flex:1;background:rgba(255,255,255,0.1);border:1px solid var(--brass);color:#fff;border-radius:2px;padding:2px 6px;font-size:14px;}
+  .add-cat{display:flex;align-items:center;gap:8px;padding:10px 20px;margin-top:6px;color:#B7BFCB;font-size:14px;background:none;border:none;width:100%;text-align:left;}
+  .add-cat:hover{color:#EDEAE0;}
+
+  main{flex:1;padding:28px 32px 60px;}
+  .section-heading{display:flex;align-items:baseline;gap:10px;margin:0 0 16px;}
+  .section-heading h2{font-size:22px;font-weight:600;margin:0;}
+  .section-heading .count{font-size:13px;color:var(--text-muted);}
+  .section-block{margin-bottom:36px;}
+  .empty-state{color:var(--text-muted);font-size:14px;padding:16px 0 32px;border-bottom:1px solid var(--line);}
+  .error-banner{background:#FBEAEA;border:1px solid #E2A9A9;color:#8A2C2C;padding:12px 16px;border-radius:var(--radius);font-size:14px;margin-bottom:20px;}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:18px;}
+
+  .card{
+    position:relative;background:var(--card);border:1px solid var(--line);
+    border-radius:0 var(--radius) var(--radius) var(--radius);box-shadow:var(--shadow);
+    padding:18px 16px 14px;cursor:pointer;transition:transform .12s ease, box-shadow .12s ease;
+  }
+  .card:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(30,42,60,0.13);}
+  .card::before{
+    content:attr(data-cat);position:absolute;top:-11px;left:0;font-size:10.5px;font-weight:600;color:#fff;
+    padding:3px 9px 2px;border-radius:3px 3px 0 0;background:var(--tab-color, var(--brass));
+    max-width:80%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  .card h3{font-size:16px;font-weight:600;margin:6px 0 6px;line-height:1.3;}
+  .card p{font-size:13.5px;color:var(--text-muted);margin:0 0 12px;line-height:1.5;}
+  .card-footer{display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--text-muted);border-top:1px solid var(--line);padding-top:9px;}
+  .attach-count{display:flex;align-items:center;gap:4px;}
+
+  .overlay{display:none;position:fixed;inset:0;background:rgba(20,29,42,0.55);align-items:flex-start;justify-content:center;padding:5vh 16px;z-index:50;overflow-y:auto;}
+  .overlay.open{display:flex;}
+  .modal{background:var(--card);border-radius:var(--radius);max-width:640px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.35);}
+  .modal-head{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--line);}
+  .modal-head h2{font-size:19px;margin:0;font-weight:600;}
+  .modal-close{background:none;border:none;font-size:20px;color:var(--text-muted);line-height:1;padding:4px;}
+  .modal-body{padding:22px;}
+  .modal-body label{display:block;font-size:12.5px;font-weight:600;color:var(--text-muted);margin:14px 0 5px;}
+  .modal-body label:first-child{margin-top:0;}
+  .modal-body input[type=text], .modal-body select, .modal-body textarea, .modal-body input[type=file]{
+    width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:var(--radius);font-size:14px;
+  }
+  .modal-body textarea{resize:vertical;min-height:110px;}
+  .field-row{display:flex;gap:14px;}
+  .field-row > div{flex:1;}
+  .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;align-items:center;}
+  .form-msg{font-size:13px;color:#B23B3B;margin-top:8px;}
+  .btn-secondary{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:9px 16px;font-size:14px;}
+  .btn-primary{background:var(--ink);color:#EDEAE0;border:none;border-radius:var(--radius);padding:9px 18px;font-size:14px;font-weight:600;}
+  .btn-primary:hover{background:var(--ink-deep);}
+  .new-cat-inline{display:none;margin-top:8px;}
+  .new-cat-inline.show{display:block;}
+
+  .detail-meta{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--text-muted);margin-bottom:16px;}
+  .detail-tag{display:inline-block;color:#fff;font-size:11.5px;font-weight:600;padding:3px 10px;border-radius:3px;}
+  .detail-body{font-size:15px;line-height:1.65;white-space:pre-wrap;margin-bottom:18px;}
+  .attach-list{display:flex;flex-direction:column;gap:8px;}
+  .attach-item{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:var(--radius);padding:9px 11px;font-size:13.5px;text-decoration:none;color:var(--text);}
+  .attach-item:hover{border-color:var(--brass);}
+  .attach-icon{width:30px;height:30px;border-radius:3px;background:var(--ink);color:#EDEAE0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;}
+  .detail-footer{display:flex;justify-content:space-between;align-items:center;margin-top:22px;padding-top:16px;border-top:1px solid var(--line);}
+  .btn-delete{background:none;border:1px solid #B23B3B;color:#B23B3B;border-radius:var(--radius);padding:8px 14px;font-size:13px;}
+  .btn-delete:hover{background:#B23B3B;color:#fff;}
+  .loading-state{padding:60px 0;text-align:center;color:var(--text-muted);font-size:14px;}
+
+  @media (max-width:820px){
+    .layout{flex-direction:column;}
+    aside{width:100%;min-height:auto;padding:12px 0;}
+    .cat-label{padding-left:16px;}
+    main{padding:20px 16px 50px;}
+    .field-row{flex-direction:column;}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <span class="name">Tablero Informativo</span>
+    <span class="sub">Admisiones · Corporación Universitaria Americana</span>
+  </div>
+  <div class="search">
+    <span>🔍</span>
+    <input id="searchInput" type="text" placeholder="Buscar por título o contenido...">
+  </div>
+  <button class="btn-new" id="btnOpenNew">+ Nueva tarjeta</button>
+</div>
+
+<div class="layout">
+  <aside>
+    <div class="cat-label">CATEGORÍAS</div>
+    <div id="catList"></div>
+    <button class="add-cat" id="btnAddCat">+ Nueva categoría</button>
+  </aside>
+  <main>
+    <div id="content"><div class="loading-state">Cargando tablero...</div></div>
+  </main>
+</div>
+
+<div class="overlay" id="detailOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h2 id="detailTitle"></h2>
+      <button class="modal-close" id="detailClose">✕</button>
+    </div>
+    <div class="modal-body">
+      <span class="detail-tag" id="detailCat"></span>
+      <div class="detail-meta">
+        <span id="detailAuthor"></span>
+        <span id="detailDate"></span>
+      </div>
+      <div class="detail-body" id="detailBody"></div>
+      <div id="detailAttachWrap">
+        <label style="margin-top:0;">Archivos adjuntos</label>
+        <div class="attach-list" id="detailAttachList"></div>
+      </div>
+      <div class="detail-footer">
+        <span style="font-size:12px;color:var(--text-muted);">ID interno: <span id="detailId"></span></span>
+        <button class="btn-delete" id="btnDeleteCard">Eliminar tarjeta</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="newOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>Nueva tarjeta</h2>
+      <button class="modal-close" id="newClose">✕</button>
+    </div>
+    <div class="modal-body">
+      <label>Título</label>
+      <input type="text" id="formTitle" placeholder="Ej: Nueva fecha límite de reliquidación">
+      <div class="field-row">
+        <div>
+          <label>Categoría</label>
+          <select id="formCat"></select>
+          <div class="new-cat-inline" id="newCatInline">
+            <input type="text" id="newCatName" placeholder="Nombre de la nueva categoría" style="margin-top:8px;">
+          </div>
+        </div>
+        <div>
+          <label>Tu nombre</label>
+          <input type="text" id="formAuthor" placeholder="Ej: Jorge Carracedo">
+        </div>
+      </div>
+      <label>Contenido</label>
+      <textarea id="formBody" placeholder="Escribe la información completa..."></textarea>
+      <label>Archivos adjuntos (opcional, máx. 8 MB en total por tarjeta)</label>
+      <input type="file" id="formFiles" multiple>
+      <div class="modal-actions">
+        <span class="form-msg" id="formMsg"></span>
+        <button class="btn-secondary" id="btnCancelNew">Cancelar</button>
+        <button class="btn-primary" id="btnSaveNew">Publicar tarjeta</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let categories = [];
+let cards = [];
+let activeCat = 'all';
+let searchTerm = '';
+
+function excerpt(text, n){ return text.length > n ? text.slice(0, n).trim() + '…' : text; }
+function formatDate(iso){
+  const d = new Date(iso + 'T00:00:00');
+  return d.toLocaleDateString('es-CO', {day:'numeric', month:'long', year:'numeric'});
+}
+function catById(id){ return categories.find(c => c.id === id); }
+
+async function loadData(){
+  const content = document.getElementById('content');
+  content.innerHTML = '<div class="loading-state">Cargando tablero...</div>';
+  try{
+    const res = await fetch('/api/data');
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error || 'Error al cargar');
+    categories = data.categories;
+    cards = data.cards;
+    render();
+  }catch(err){
+    content.innerHTML = `<div class="error-banner">No se pudo cargar el tablero: ${err.message}. Verifica tu conexión e intenta de nuevo.</div>`;
+  }
+}
+
+function renderSidebar(){
+  const wrap = document.getElementById('catList');
+  wrap.innerHTML = '';
+  const allItem = document.createElement('div');
+  allItem.className = 'cat-item' + (activeCat === 'all' ? ' active' : '');
+  allItem.innerHTML = `<span class="cat-dot" style="background:#8A93A3;"></span><span class="cat-name">Todas</span><span class="cat-count">${cards.length}</span>`;
+  allItem.onclick = () => { activeCat = 'all'; render(); };
+  wrap.appendChild(allItem);
+
+  categories.forEach(cat => {
+    const count = cards.filter(c => c.catId === cat.id).length;
+    const item = document.createElement('div');
+    item.className = 'cat-item' + (activeCat === cat.id ? ' active' : '');
+    item.innerHTML = `
+      <span class="cat-dot" style="background:${cat.color};"></span>
+      <span class="cat-name">${cat.name}</span>
+      <span class="cat-count">${count}</span>
+      <button class="cat-edit" title="Renombrar">✎</button>
+    `;
+    item.querySelector('.cat-name').onclick = () => { activeCat = cat.id; render(); };
+    item.onclick = (e) => { if(e.target.className !== 'cat-edit'){ activeCat = cat.id; render(); } };
+    item.querySelector('.cat-edit').onclick = (e) => { e.stopPropagation(); startRename(item, cat); };
+    wrap.appendChild(item);
+  });
+}
+
+function startRename(item, cat){
+  item.innerHTML = `<span class="cat-dot" style="background:${cat.color};"></span>`;
+  const input = document.createElement('input');
+  input.className = 'cat-rename-input';
+  input.value = cat.name;
+  item.appendChild(input);
+  input.focus();
+  input.select();
+  const commit = async () => {
+    const newName = input.value.trim();
+    if(!newName || newName === cat.name){ render(); return; }
+    try{
+      const res = await fetch(`/api/categories/${cat.id}`, {
+        method:'PUT',
+        headers:{'content-type':'application/json'},
+        body: JSON.stringify({name:newName})
+      });
+      const data = await res.json();
+      if(!res.ok) throw new Error(data.error);
+      categories = data.categories;
+    }catch(err){
+      alert('No se pudo renombrar: ' + err.message);
+    }
+    render();
+  };
+  input.onblur = commit;
+  input.onkeydown = (e) => { if(e.key === 'Enter') input.blur(); };
+}
+
+function matchesSearch(card){
+  if(!searchTerm) return true;
+  const t = searchTerm.toLowerCase();
+  return card.title.toLowerCase().includes(t) || card.excerpt.toLowerCase().includes(t);
+}
+
+function cardEl(card){
+  const cat = catById(card.catId);
+  const div = document.createElement('div');
+  div.className = 'card';
+  div.setAttribute('data-cat', cat ? cat.name : '');
+  div.style.setProperty('--tab-color', cat ? cat.color : '#B08A3E');
+  div.innerHTML = `
+    <h3>${card.title}</h3>
+    <p>${card.excerpt}</p>
+    <div class="card-footer">
+      <span>${card.author} · ${formatDate(card.date)}</span>
+      <span class="attach-count">${card.attachments.length ? '📎 ' + card.attachments.length : ''}</span>
+    </div>
+  `;
+  div.onclick = () => openDetail(card);
+  return div;
+}
+
+function render(){
+  renderSidebar();
+  const content = document.getElementById('content');
+  content.innerHTML = '';
+
+  const catsToShow = activeCat === 'all' ? categories : categories.filter(c => c.id === activeCat);
+  let anyRendered = false;
+
+  catsToShow.forEach(cat => {
+    const catCards = cards.filter(c => c.catId === cat.id && matchesSearch(c))
+                          .sort((a,b) => b.date.localeCompare(a.date));
+    if(activeCat === 'all' && catCards.length === 0) return;
+
+    anyRendered = true;
+    const block = document.createElement('div');
+    block.className = 'section-block';
+    block.innerHTML = `<div class="section-heading"><h2>${cat.name}</h2><span class="count">${catCards.length} tarjeta${catCards.length===1?'':'s'}</span></div>`;
+    const gridWrap = document.createElement('div');
+    if(catCards.length === 0){
+      gridWrap.className = 'empty-state';
+      gridWrap.textContent = 'Aún no hay tarjetas en esta categoría.';
+    } else {
+      gridWrap.className = 'grid';
+      catCards.forEach(c => gridWrap.appendChild(cardEl(c)));
+    }
+    block.appendChild(gridWrap);
+    content.appendChild(block);
+  });
+
+  if(!anyRendered){
+    content.innerHTML = '<div class="empty-state">No se encontraron tarjetas.</div>';
+  }
+}
+
+async function openDetail(summary){
+  const cat = catById(summary.catId);
+  document.getElementById('detailTitle').textContent = summary.title;
+  document.getElementById('detailCat').textContent = cat ? cat.name : '';
+  document.getElementById('detailCat').style.background = cat ? cat.color : '#B08A3E';
+  document.getElementById('detailAuthor').textContent = 'Publicado por ' + summary.author;
+  document.getElementById('detailDate').textContent = formatDate(summary.date);
+  document.getElementById('detailId').textContent = summary.id;
+  document.getElementById('detailBody').textContent = 'Cargando...';
+  document.getElementById('detailAttachWrap').style.display = 'none';
+  document.getElementById('detailOverlay').classList.add('open');
+
+  let card;
+  try{
+    const res = await fetch(`/api/cards/${summary.id}`);
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error || 'No se pudo cargar la tarjeta');
+    card = data.card;
+  }catch(err){
+    document.getElementById('detailBody').textContent = 'Error al cargar: ' + err.message;
+    return;
+  }
+
+  document.getElementById('detailBody').textContent = card.body;
+
+  const attachList = document.getElementById('detailAttachList');
+  attachList.innerHTML = '';
+  if(card.attachments.length === 0){
+    document.getElementById('detailAttachWrap').style.display = 'none';
+  } else {
+    document.getElementById('detailAttachWrap').style.display = 'block';
+    card.attachments.forEach(a => {
+      const row = document.createElement('a');
+      row.className = 'attach-item';
+      row.href = `data:${a.mimeType};base64,${a.dataBase64}`;
+      row.download = a.name;
+      row.innerHTML = `<span class="attach-icon">${a.ext}</span><span>${a.name}</span>`;
+      attachList.appendChild(row);
+    });
+  }
+
+  document.getElementById('btnDeleteCard').onclick = async () => {
+    if(!confirm('¿Eliminar esta tarjeta? Esta acción no se puede deshacer.')) return;
+    try{
+      const res = await fetch(`/api/cards/${card.id}`, {method:'DELETE'});
+      const data = await res.json();
+      if(!res.ok) throw new Error(data.error);
+      cards = cards.filter(c => c.id !== card.id);
+      closeDetail();
+      render();
+    }catch(err){
+      alert('No se pudo eliminar: ' + err.message);
+    }
+  };
+}
+function closeDetail(){ document.getElementById('detailOverlay').classList.remove('open'); }
+document.getElementById('detailClose').onclick = closeDetail;
+document.getElementById('detailOverlay').onclick = (e) => { if(e.target.id === 'detailOverlay') closeDetail(); };
+
+function populateCatSelect(){
+  const sel = document.getElementById('formCat');
+  sel.innerHTML = '';
+  categories.forEach(cat => {
+    const opt = document.createElement('option');
+    opt.value = cat.id; opt.textContent = cat.name;
+    sel.appendChild(opt);
+  });
+  const optNew = document.createElement('option');
+  optNew.value = '__new__'; optNew.textContent = '+ Nueva categoría...';
+  sel.appendChild(optNew);
+}
+document.getElementById('formCat').addEventListener('change', (e) => {
+  document.getElementById('newCatInline').classList.toggle('show', e.target.value === '__new__');
+});
+
+function openNew(){
+  populateCatSelect();
+  document.getElementById('formTitle').value = '';
+  document.getElementById('formAuthor').value = '';
+  document.getElementById('formBody').value = '';
+  document.getElementById('formFiles').value = '';
+  document.getElementById('newCatName').value = '';
+  document.getElementById('formMsg').textContent = '';
+  document.getElementById('newCatInline').classList.remove('show');
+  document.getElementById('newOverlay').classList.add('open');
+}
+function closeNew(){ document.getElementById('newOverlay').classList.remove('open'); }
+document.getElementById('btnOpenNew').onclick = openNew;
+document.getElementById('newClose').onclick = closeNew;
+document.getElementById('btnCancelNew').onclick = closeNew;
+document.getElementById('newOverlay').onclick = (e) => { if(e.target.id === 'newOverlay') closeNew(); };
+
+document.getElementById('btnSaveNew').onclick = async () => {
+  const title = document.getElementById('formTitle').value.trim();
+  const author = document.getElementById('formAuthor').value.trim();
+  const bodyText = document.getElementById('formBody').value.trim();
+  const catSel = document.getElementById('formCat').value;
+  const newCatName = document.getElementById('newCatName').value.trim();
+  const msg = document.getElementById('formMsg');
+  const btn = document.getElementById('btnSaveNew');
+
+  if(!title || !author || !bodyText){
+    msg.textContent = 'Completa título, tu nombre y el contenido.';
+    return;
+  }
+  if(catSel === '__new__' && !newCatName){
+    msg.textContent = 'Escribe un nombre para la nueva categoría.';
+    return;
+  }
+
+  const fd = new FormData();
+  fd.append('title', title);
+  fd.append('author', author);
+  fd.append('body', bodyText);
+  fd.append('catId', catSel);
+  if(catSel === '__new__') fd.append('newCategoryName', newCatName);
+  const files = document.getElementById('formFiles').files;
+  for(const f of files) fd.append('files', f);
+
+  btn.disabled = true;
+  msg.textContent = 'Publicando...';
+  try{
+    const res = await fetch('/api/cards', { method:'POST', body: fd });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error || 'Error desconocido');
+    cards.push(data.card);
+    categories = data.categories;
+    activeCat = data.card.catId;
+    closeNew();
+    render();
+  }catch(err){
+    msg.textContent = err.message;
+  }finally{
+    btn.disabled = false;
+  }
+};
+
+document.getElementById('btnAddCat').onclick = async () => {
+  const name = prompt('Nombre de la nueva categoría:');
+  if(!name || !name.trim()) return;
+  try{
+    const res = await fetch('/api/categories', {
+      method:'POST',
+      headers:{'content-type':'application/json'},
+      body: JSON.stringify({name:name.trim()})
+    });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error);
+    categories = data.categories;
+    render();
+  }catch(err){
+    alert('No se pudo crear la categoría: ' + err.message);
+  }
+};
+
+document.getElementById('searchInput').addEventListener('input', (e) => {
+  searchTerm = e.target.value;
+  render();
+});
+
+loadData();
+</script>
+</body>
+</html>

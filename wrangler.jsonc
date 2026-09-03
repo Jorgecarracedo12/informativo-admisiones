@@ -1,0 +1,14 @@
+{
+  "name": "informativo-admisiones",
+  "compatibility_date": "2026-09-01",
+  "main": "worker.js",
+  "assets": {
+    "directory": "./public"
+  },
+  "kv_namespaces": [
+    {
+      "binding": "TABLERO_KV",
+      "id": "769ae7a0d96747f0a51ef8d0f522dcd6"
+    }
+  ]
+}
