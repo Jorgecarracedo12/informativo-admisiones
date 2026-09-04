@@ -1,3 +1,6 @@
+Aquí está completo — recuerda que este archivo va dentro de la carpeta `public/` (nombre: `public/index.html`):
+
+```html
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -8,17 +11,18 @@
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --ink: #1E2A3C;
-    --ink-deep: #141D2A;
+    --ink: #1B2350;
+    --ink-deep: #12172E;
+    --ink-gradient-end: #3B2A5E;
     --paper: #F7F5F0;
     --card: #FFFFFF;
-    --brass: #B08A3E;
-    --brass-dark: #8C6C2E;
+    --brass: #C9A227;
+    --brass-dark: #A3821C;
     --text: #20242B;
     --text-muted: #6B7280;
     --line: #E4E0D6;
     --radius: 4px;
-    --shadow: 0 2px 10px rgba(30,42,60,0.08), 0 1px 2px rgba(30,42,60,0.10);
+    --shadow: 0 2px 10px rgba(27,35,80,0.10), 0 1px 2px rgba(27,35,80,0.12);
   }
   *{box-sizing:border-box;}
   body{margin:0;font-family:'IBM Plex Sans',sans-serif;color:var(--text);background:var(--paper);}
@@ -30,9 +34,12 @@
   a{color:inherit;}
 
   .topbar{
-    background:var(--ink);color:#EDEAE0;display:flex;align-items:center;gap:20px;
+    background:linear-gradient(135deg, var(--ink) 0%, var(--ink-gradient-end) 100%);
+    color:#EDEAE0;display:flex;align-items:center;gap:20px;
     padding:14px 24px;border-bottom:3px solid var(--brass);
   }
+  .brand-wrap{display:flex;align-items:center;gap:12px;}
+  .brand-logo{height:36px;width:auto;flex-shrink:0;}
   .topbar .brand{display:flex;flex-direction:column;line-height:1.1;}
   .topbar .brand .name{font-family:'Newsreader',serif;font-weight:600;font-size:19px;}
   .topbar .brand .sub{font-size:12px;color:#B7BFCB;margin-top:2px;}
@@ -49,7 +56,7 @@
   .btn-new:hover{background:#C39B4A;}
 
   .layout{display:flex;align-items:flex-start;min-height:calc(100vh - 61px);}
-  aside{width:250px;flex-shrink:0;background:var(--ink);color:#DCE1E8;min-height:calc(100vh - 61px);padding:20px 0;}
+  aside{width:250px;flex-shrink:0;background:linear-gradient(160deg, var(--ink) 0%, var(--ink-gradient-end) 100%);color:#DCE1E8;min-height:calc(100vh - 61px);padding:20px 0;}
   .cat-label{font-size:11px;letter-spacing:0.03em;color:#8A93A3;padding:0 20px 10px;}
   .cat-item{display:flex;align-items:center;gap:10px;padding:9px 20px;cursor:pointer;border-left:3px solid transparent;font-size:14.5px;}
   .cat-item:hover{background:rgba(255,255,255,0.05);}
@@ -123,6 +130,10 @@
   .btn-delete{background:none;border:1px solid #B23B3B;color:#B23B3B;border-radius:var(--radius);padding:8px 14px;font-size:13px;}
   .btn-delete:hover{background:#B23B3B;color:#fff;}
   .loading-state{padding:60px 0;text-align:center;color:var(--text-muted);font-size:14px;}
+  .site-footer{
+    text-align:center;font-size:12px;color:var(--text-muted);
+    padding:16px 0 22px;border-top:1px solid var(--line);background:var(--paper);
+  }
 
   @media (max-width:820px){
     .layout{flex-direction:column;}
@@ -136,9 +147,12 @@
 <body>
 
 <div class="topbar">
-  <div class="brand">
-    <span class="name">Tablero Informativo</span>
-    <span class="sub">Admisiones · Corporación Universitaria Americana</span>
+  <div class="brand-wrap">
+    <img class="brand-logo" id="brandLogo" src="" alt="Logo institucional" style="display:none;">
+    <div class="brand">
+      <span class="name">Tablero Informativo</span>
+      <span class="sub">Admisiones · Corporación Universitaria Americana</span>
+    </div>
   </div>
   <div class="search">
     <span>🔍</span>
@@ -157,6 +171,8 @@
     <div id="content"><div class="loading-state">Cargando tablero...</div></div>
   </main>
 </div>
+
+<footer class="site-footer">Desarrollado por Jorge Carracedo</footer>
 
 <div class="overlay" id="detailOverlay">
   <div class="modal">
@@ -202,7 +218,10 @@
         </div>
         <div>
           <label>Tu nombre</label>
-          <input type="text" id="formAuthor" placeholder="Ej: Jorge Carracedo">
+          <select id="formAuthor"></select>
+          <div class="new-cat-inline" id="newAuthorInline">
+            <input type="text" id="newAuthorName" placeholder="Escribe tu nombre completo" style="margin-top:8px;">
+          </div>
         </div>
       </div>
       <label>Contenido</label>
@@ -221,6 +240,7 @@
 <script>
 let categories = [];
 let cards = [];
+let authors = [];
 let activeCat = 'all';
 let searchTerm = '';
 
@@ -240,6 +260,12 @@ async function loadData(){
     if(!res.ok) throw new Error(data.error || 'Error al cargar');
     categories = data.categories;
     cards = data.cards;
+    authors = data.authors || [];
+    if(data.logoUrl){
+      const logo = document.getElementById('brandLogo');
+      logo.src = data.logoUrl;
+      logo.style.display = 'block';
+    }
     render();
   }catch(err){
     content.innerHTML = `<div class="error-banner">No se pudo cargar el tablero: ${err.message}. Verifica tu conexión e intenta de nuevo.</div>`;
@@ -312,7 +338,7 @@ function cardEl(card){
   const div = document.createElement('div');
   div.className = 'card';
   div.setAttribute('data-cat', cat ? cat.name : '');
-  div.style.setProperty('--tab-color', cat ? cat.color : '#B08A3E');
+  div.style.setProperty('--tab-color', cat ? cat.color : '#C9A227');
   div.innerHTML = `
     <h3>${card.title}</h3>
     <p>${card.excerpt}</p>
@@ -363,7 +389,7 @@ async function openDetail(summary){
   const cat = catById(summary.catId);
   document.getElementById('detailTitle').textContent = summary.title;
   document.getElementById('detailCat').textContent = cat ? cat.name : '';
-  document.getElementById('detailCat').style.background = cat ? cat.color : '#B08A3E';
+  document.getElementById('detailCat').style.background = cat ? cat.color : '#C9A227';
   document.getElementById('detailAuthor').textContent = 'Publicado por ' + summary.author;
   document.getElementById('detailDate').textContent = formatDate(summary.date);
   document.getElementById('detailId').textContent = summary.id;
@@ -434,15 +460,39 @@ document.getElementById('formCat').addEventListener('change', (e) => {
   document.getElementById('newCatInline').classList.toggle('show', e.target.value === '__new__');
 });
 
+function populateAuthorSelect(){
+  const sel = document.getElementById('formAuthor');
+  sel.innerHTML = '';
+  if(authors.length === 0){
+    const placeholder = document.createElement('option');
+    placeholder.value = ''; placeholder.textContent = 'Selecciona tu nombre...';
+    placeholder.disabled = true; placeholder.selected = true;
+    sel.appendChild(placeholder);
+  }
+  authors.forEach(name => {
+    const opt = document.createElement('option');
+    opt.value = name; opt.textContent = name;
+    sel.appendChild(opt);
+  });
+  const optNew = document.createElement('option');
+  optNew.value = '__new__'; optNew.textContent = '+ Agregar mi nombre...';
+  sel.appendChild(optNew);
+}
+document.getElementById('formAuthor').addEventListener('change', (e) => {
+  document.getElementById('newAuthorInline').classList.toggle('show', e.target.value === '__new__');
+});
+
 function openNew(){
   populateCatSelect();
+  populateAuthorSelect();
   document.getElementById('formTitle').value = '';
-  document.getElementById('formAuthor').value = '';
   document.getElementById('formBody').value = '';
   document.getElementById('formFiles').value = '';
   document.getElementById('newCatName').value = '';
+  document.getElementById('newAuthorName').value = '';
   document.getElementById('formMsg').textContent = '';
   document.getElementById('newCatInline').classList.remove('show');
+  document.getElementById('newAuthorInline').classList.remove('show');
   document.getElementById('newOverlay').classList.add('open');
 }
 function closeNew(){ document.getElementById('newOverlay').classList.remove('open'); }
@@ -453,10 +503,12 @@ document.getElementById('newOverlay').onclick = (e) => { if(e.target.id === 'new
 
 document.getElementById('btnSaveNew').onclick = async () => {
   const title = document.getElementById('formTitle').value.trim();
-  const author = document.getElementById('formAuthor').value.trim();
   const bodyText = document.getElementById('formBody').value.trim();
   const catSel = document.getElementById('formCat').value;
   const newCatName = document.getElementById('newCatName').value.trim();
+  const authorSel = document.getElementById('formAuthor').value;
+  const newAuthorName = document.getElementById('newAuthorName').value.trim();
+  const author = authorSel === '__new__' ? newAuthorName : authorSel;
   const msg = document.getElementById('formMsg');
   const btn = document.getElementById('btnSaveNew');
 
@@ -486,6 +538,7 @@ document.getElementById('btnSaveNew').onclick = async () => {
     if(!res.ok) throw new Error(data.error || 'Error desconocido');
     cards.push(data.card);
     categories = data.categories;
+    authors = data.authors || authors;
     activeCat = data.card.catId;
     closeNew();
     render();
@@ -523,3 +576,4 @@ loadData();
 </script>
 </body>
 </html>
+```
