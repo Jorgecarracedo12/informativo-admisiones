@@ -2,10 +2,10 @@
 // Tablero Informativo — Worker único (API + estáticos)
 // ------------------------------------------------------------------
 
-const PALETTE = ['#B08A3E','#2F6F63','#3B4C7A','#7A3B4C','#6B7A3B','#8A4B2E','#4B5A6B','#9C6B2E'];
+const PALETTE = ['#C9A227','#2F6F63','#3B4C7A','#7A3B4C','#6B7A3B','#8A4B2E','#4B5A6B','#9C6B2E'];
 
 const DEFAULT_CATEGORIES = [
-  { id: 'avisos',     name: 'Avisos Generales',        color: '#B08A3E' },
+  { id: 'avisos',     name: 'Avisos Generales',        color: '#C9A227' },
   { id: 'procesos',   name: 'Procesos y Trámites',      color: '#2F6F63' },
   { id: 'formatos',   name: 'Formatos y Plantillas',    color: '#3B4C7A' },
   { id: 'circulares', name: 'Circulares',               color: '#7A3B4C' },
@@ -14,6 +14,9 @@ const DEFAULT_CATEGORIES = [
 ];
 
 const MAX_ATTACHMENTS_BYTES = 8 * 1024 * 1024; // 8 MB en crudo por tarjeta
+
+// Se completa cuando Jorge suba el logo institucional (como data URI base64).
+const LOGO_DATA_URI = '';
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -42,6 +45,14 @@ function arrayBufferToBase64(buffer) {
     binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
   }
   return btoa(binary);
+}
+
+async function getAuthors(env) {
+  const raw = await env.TABLERO_KV.get('authors');
+  return raw ? JSON.parse(raw) : [];
+}
+async function saveAuthors(env, authors) {
+  await env.TABLERO_KV.put('authors', JSON.stringify(authors));
 }
 
 async function getCategories(env) {
@@ -96,7 +107,8 @@ export default {
       if (path === '/api/data' && method === 'GET') {
         const categories = await getCategories(env);
         const cards = await getCardIndex(env);
-        return json({ categories, cards });
+        const authors = await getAuthors(env);
+        return json({ categories, cards, authors, logoUrl: LOGO_DATA_URI || null });
       }
 
       // POST /api/categories — crear categoría
@@ -197,7 +209,13 @@ export default {
         index.push(summary);
         await saveCardIndex(env, index);
 
-        return json({ card: summary, categories });
+        const authors = await getAuthors(env);
+        if (!authors.includes(author)) {
+          authors.push(author);
+          await saveAuthors(env, authors);
+        }
+
+        return json({ card: summary, categories, authors });
       }
 
       // GET /api/cards/:id — detalle completo (con adjuntos)
