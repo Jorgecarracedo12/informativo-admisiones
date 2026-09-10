@@ -36,7 +36,7 @@
     padding:14px 24px;border-bottom:3px solid var(--brass);
   }
   .brand-wrap{display:flex;align-items:center;gap:12px;}
-  .brand-logo{height:36px;width:auto;flex-shrink:0;}
+  .brand-logo{height:38px;width:38px;flex-shrink:0;}
   .topbar .brand{display:flex;flex-direction:column;line-height:1.1;}
   .topbar .brand .name{font-family:'Newsreader',serif;font-weight:600;font-size:19px;}
   .topbar .brand .sub{font-size:12px;color:#B7BFCB;margin-top:2px;}
@@ -55,14 +55,16 @@
   .layout{display:flex;align-items:flex-start;min-height:calc(100vh - 61px);}
   aside{width:250px;flex-shrink:0;background:linear-gradient(160deg, var(--ink) 0%, var(--ink-gradient-end) 100%);color:#DCE1E8;min-height:calc(100vh - 61px);padding:20px 0;}
   .cat-label{font-size:11px;letter-spacing:0.03em;color:#8A93A3;padding:0 20px 10px;}
-  .cat-item{display:flex;align-items:center;gap:10px;padding:9px 20px;cursor:pointer;border-left:3px solid transparent;font-size:14.5px;}
+  .cat-item{display:flex;align-items:center;gap:8px;padding:9px 20px;cursor:pointer;border-left:3px solid transparent;font-size:14.5px;}
   .cat-item:hover{background:rgba(255,255,255,0.05);}
   .cat-item.active{background:rgba(255,255,255,0.07);border-left-color:var(--brass);}
   .cat-dot{width:9px;height:9px;border-radius:2px;flex-shrink:0;}
   .cat-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .cat-count{font-size:12px;color:#8A93A3;}
-  .cat-edit{opacity:0;background:none;border:none;color:#8A93A3;font-size:12px;padding:2px 4px;}
-  .cat-item:hover .cat-edit{opacity:1;}
+  .cat-actions{display:flex;gap:1px;opacity:0;flex-shrink:0;}
+  .cat-item:hover .cat-actions{opacity:1;}
+  .cat-icon-btn{background:none;border:none;color:#8A93A3;font-size:11px;padding:3px 4px;line-height:1;}
+  .cat-icon-btn:hover{color:#EDEAE0;}
   .cat-rename-input{flex:1;background:rgba(255,255,255,0.1);border:1px solid var(--brass);color:#fff;border-radius:2px;padding:2px 6px;font-size:14px;}
   .add-cat{display:flex;align-items:center;gap:8px;padding:10px 20px;margin-top:6px;color:#B7BFCB;font-size:14px;background:none;border:none;width:100%;text-align:left;}
   .add-cat:hover{color:#EDEAE0;}
@@ -88,6 +90,7 @@
     padding:3px 9px 2px;border-radius:3px 3px 0 0;background:var(--tab-color, var(--brass));
     max-width:80%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
   }
+  .card.pinned{border-color:var(--brass);}
   .card h3{font-size:16px;font-weight:600;margin:6px 0 6px;line-height:1.3;}
   .card p{font-size:13.5px;color:var(--text-muted);margin:0 0 12px;line-height:1.5;}
   .card-footer{display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--text-muted);border-top:1px solid var(--line);padding-top:9px;}
@@ -123,7 +126,8 @@
   .attach-item{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:var(--radius);padding:9px 11px;font-size:13.5px;text-decoration:none;color:var(--text);}
   .attach-item:hover{border-color:var(--brass);}
   .attach-icon{width:30px;height:30px;border-radius:3px;background:var(--ink);color:#EDEAE0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;}
-  .detail-footer{display:flex;justify-content:space-between;align-items:center;margin-top:22px;padding-top:16px;border-top:1px solid var(--line);}
+  .detail-footer{display:flex;justify-content:space-between;align-items:center;margin-top:22px;padding-top:16px;border-top:1px solid var(--line);flex-wrap:wrap;gap:10px;}
+  .detail-actions{display:flex;gap:8px;flex-wrap:wrap;}
   .btn-delete{background:none;border:1px solid #B23B3B;color:#B23B3B;border-radius:var(--radius);padding:8px 14px;font-size:13px;}
   .btn-delete:hover{background:#B23B3B;color:#fff;}
   .loading-state{padding:60px 0;text-align:center;color:var(--text-muted);font-size:14px;}
@@ -145,7 +149,13 @@
 
 <div class="topbar">
   <div class="brand-wrap">
-    <img class="brand-logo" id="brandLogo" src="" alt="Logo institucional" style="display:none;">
+    <svg class="brand-logo" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M32 4 L54 12 V30 C54 44 44 54 32 60 C20 54 10 44 10 30 V12 Z" stroke="#EDEAE0" stroke-width="3" stroke-linejoin="round"/>
+      <circle cx="32" cy="30" r="14" stroke="#EDEAE0" stroke-width="2"/>
+      <path d="M18 30 H46" stroke="#EDEAE0" stroke-width="1.6"/>
+      <path d="M32 16 C24 22 24 38 32 44" stroke="#EDEAE0" stroke-width="1.6"/>
+      <path d="M32 16 C40 22 40 38 32 44" stroke="#EDEAE0" stroke-width="1.6"/>
+    </svg>
     <div class="brand">
       <span class="name">Tablero Informativo</span>
       <span class="sub">Admisiones · Corporación Universitaria Americana</span>
@@ -169,7 +179,7 @@
   </main>
 </div>
 
-<footer class="site-footer">Desarrollado por Jorge Carracedo Cortes</footer>
+<footer class="site-footer">Desarrollado por Jorge Carracedo</footer>
 
 <div class="overlay" id="detailOverlay">
   <div class="modal">
@@ -190,7 +200,11 @@
       </div>
       <div class="detail-footer">
         <span style="font-size:12px;color:var(--text-muted);">ID interno: <span id="detailId"></span></span>
-        <button class="btn-delete" id="btnDeleteCard">Eliminar tarjeta</button>
+        <div class="detail-actions">
+          <button class="btn-secondary" id="btnTogglePin">Fijar</button>
+          <button class="btn-secondary" id="btnEditCard">Editar</button>
+          <button class="btn-delete" id="btnDeleteCard">Eliminar tarjeta</button>
+        </div>
       </div>
     </div>
   </div>
@@ -199,7 +213,7 @@
 <div class="overlay" id="newOverlay">
   <div class="modal">
     <div class="modal-head">
-      <h2>Nueva tarjeta</h2>
+      <h2 id="formHeading">Nueva tarjeta</h2>
       <button class="modal-close" id="newClose">✕</button>
     </div>
     <div class="modal-body">
@@ -214,7 +228,7 @@
           </div>
         </div>
         <div>
-          <label>Tu nombre</label>
+          <label id="authorFieldLabel">Tu nombre</label>
           <select id="formAuthor"></select>
           <div class="new-cat-inline" id="newAuthorInline">
             <input type="text" id="newAuthorName" placeholder="Escribe tu nombre completo" style="margin-top:8px;">
@@ -223,7 +237,7 @@
       </div>
       <label>Contenido</label>
       <textarea id="formBody" placeholder="Escribe la información completa..."></textarea>
-      <label>Archivos adjuntos (opcional, máx. 8 MB en total por tarjeta)</label>
+      <label id="fileHelpText">Archivos adjuntos (opcional, máx. 8 MB en total por tarjeta)</label>
       <input type="file" id="formFiles" multiple>
       <div class="modal-actions">
         <span class="form-msg" id="formMsg"></span>
@@ -240,8 +254,8 @@ let cards = [];
 let authors = [];
 let activeCat = 'all';
 let searchTerm = '';
+let editingId = null;
 
-function excerpt(text, n){ return text.length > n ? text.slice(0, n).trim() + '…' : text; }
 function formatDate(iso){
   const d = new Date(iso + 'T00:00:00');
   return d.toLocaleDateString('es-CO', {day:'numeric', month:'long', year:'numeric'});
@@ -258,11 +272,6 @@ async function loadData(){
     categories = data.categories;
     cards = data.cards;
     authors = data.authors || [];
-    if(data.logoUrl){
-      const logo = document.getElementById('brandLogo');
-      logo.src = data.logoUrl;
-      logo.style.display = 'block';
-    }
     render();
   }catch(err){
     content.innerHTML = `<div class="error-banner">No se pudo cargar el tablero: ${err.message}. Verifica tu conexión e intenta de nuevo.</div>`;
@@ -278,7 +287,7 @@ function renderSidebar(){
   allItem.onclick = () => { activeCat = 'all'; render(); };
   wrap.appendChild(allItem);
 
-  categories.forEach(cat => {
+  categories.forEach((cat, idx) => {
     const count = cards.filter(c => c.catId === cat.id).length;
     const item = document.createElement('div');
     item.className = 'cat-item' + (activeCat === cat.id ? ' active' : '');
@@ -286,13 +295,58 @@ function renderSidebar(){
       <span class="cat-dot" style="background:${cat.color};"></span>
       <span class="cat-name">${cat.name}</span>
       <span class="cat-count">${count}</span>
-      <button class="cat-edit" title="Renombrar">✎</button>
+      <span class="cat-actions">
+        <button class="cat-icon-btn" data-action="up" title="Subir">▲</button>
+        <button class="cat-icon-btn" data-action="down" title="Bajar">▼</button>
+        <button class="cat-icon-btn" data-action="rename" title="Renombrar">✎</button>
+        <button class="cat-icon-btn" data-action="delete" title="Eliminar">🗑</button>
+      </span>
     `;
-    item.querySelector('.cat-name').onclick = () => { activeCat = cat.id; render(); };
-    item.onclick = (e) => { if(e.target.className !== 'cat-edit'){ activeCat = cat.id; render(); } };
-    item.querySelector('.cat-edit').onclick = (e) => { e.stopPropagation(); startRename(item, cat); };
+    item.onclick = (e) => {
+      if(e.target.closest('.cat-actions')) return;
+      activeCat = cat.id; render();
+    };
+    item.querySelector('[data-action="up"]').onclick = (e) => { e.stopPropagation(); moveCategory(idx, -1); };
+    item.querySelector('[data-action="down"]').onclick = (e) => { e.stopPropagation(); moveCategory(idx, 1); };
+    item.querySelector('[data-action="rename"]').onclick = (e) => { e.stopPropagation(); startRename(item, cat); };
+    item.querySelector('[data-action="delete"]').onclick = (e) => { e.stopPropagation(); deleteCategory(cat); };
     wrap.appendChild(item);
   });
+}
+
+async function moveCategory(idx, dir){
+  const newIdx = idx + dir;
+  if(newIdx < 0 || newIdx >= categories.length) return;
+  const newOrder = categories.slice();
+  const [moved] = newOrder.splice(idx, 1);
+  newOrder.splice(newIdx, 0, moved);
+  try{
+    const res = await fetch('/api/categories/reorder', {
+      method:'PUT',
+      headers:{'content-type':'application/json'},
+      body: JSON.stringify({order: newOrder.map(c => c.id)})
+    });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error);
+    categories = data.categories;
+    render();
+  }catch(err){
+    alert('No se pudo reordenar: ' + err.message);
+  }
+}
+
+async function deleteCategory(cat){
+  if(!confirm(`¿Eliminar la categoría "${cat.name}"?`)) return;
+  try{
+    const res = await fetch(`/api/categories/${cat.id}`, {method:'DELETE'});
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error);
+    categories = data.categories;
+    if(activeCat === cat.id) activeCat = 'all';
+    render();
+  }catch(err){
+    alert('No se pudo eliminar: ' + err.message);
+  }
 }
 
 function startRename(item, cat){
@@ -333,11 +387,11 @@ function matchesSearch(card){
 function cardEl(card){
   const cat = catById(card.catId);
   const div = document.createElement('div');
-  div.className = 'card';
+  div.className = 'card' + (card.pinned ? ' pinned' : '');
   div.setAttribute('data-cat', cat ? cat.name : '');
   div.style.setProperty('--tab-color', cat ? cat.color : '#C9A227');
   div.innerHTML = `
-    <h3>${card.title}</h3>
+    <h3>${card.pinned ? '📌 ' : ''}${card.title}</h3>
     <p>${card.excerpt}</p>
     <div class="card-footer">
       <span>${card.author} · ${formatDate(card.date)}</span>
@@ -358,7 +412,7 @@ function render(){
 
   catsToShow.forEach(cat => {
     const catCards = cards.filter(c => c.catId === cat.id && matchesSearch(c))
-                          .sort((a,b) => b.date.localeCompare(a.date));
+                          .sort((a,b) => (b.pinned?1:0) - (a.pinned?1:0) || b.date.localeCompare(a.date));
     if(activeCat === 'all' && catCards.length === 0) return;
 
     anyRendered = true;
@@ -392,6 +446,7 @@ async function openDetail(summary){
   document.getElementById('detailId').textContent = summary.id;
   document.getElementById('detailBody').textContent = 'Cargando...';
   document.getElementById('detailAttachWrap').style.display = 'none';
+  document.getElementById('btnTogglePin').textContent = summary.pinned ? 'Desfijar' : 'Fijar';
   document.getElementById('detailOverlay').classList.add('open');
 
   let card;
@@ -406,6 +461,13 @@ async function openDetail(summary){
   }
 
   document.getElementById('detailBody').textContent = card.body;
+
+  let authorLine = 'Publicado por ' + card.author;
+  if(card.lastEditedBy){
+    authorLine += ` · Editado por ${card.lastEditedBy} (${formatDate(card.lastEditedAt)})`;
+  }
+  document.getElementById('detailAuthor').textContent = authorLine;
+  document.getElementById('btnTogglePin').textContent = card.pinned ? 'Desfijar' : 'Fijar';
 
   const attachList = document.getElementById('detailAttachList');
   attachList.innerHTML = '';
@@ -422,6 +484,23 @@ async function openDetail(summary){
       attachList.appendChild(row);
     });
   }
+
+  document.getElementById('btnTogglePin').onclick = async () => {
+    try{
+      const res = await fetch(`/api/cards/${card.id}/pin`, {method:'POST'});
+      const data = await res.json();
+      if(!res.ok) throw new Error(data.error);
+      const idx = cards.findIndex(c => c.id === card.id);
+      if(idx !== -1) cards[idx] = data.card;
+      card.pinned = data.card.pinned;
+      document.getElementById('btnTogglePin').textContent = card.pinned ? 'Desfijar' : 'Fijar';
+      render();
+    }catch(err){
+      alert('No se pudo actualizar: ' + err.message);
+    }
+  };
+
+  document.getElementById('btnEditCard').onclick = () => openEdit(card);
 
   document.getElementById('btnDeleteCard').onclick = async () => {
     if(!confirm('¿Eliminar esta tarjeta? Esta acción no se puede deshacer.')) return;
@@ -480,8 +559,13 @@ document.getElementById('formAuthor').addEventListener('change', (e) => {
 });
 
 function openNew(){
+  editingId = null;
   populateCatSelect();
   populateAuthorSelect();
+  document.getElementById('formHeading').textContent = 'Nueva tarjeta';
+  document.getElementById('authorFieldLabel').textContent = 'Tu nombre';
+  document.getElementById('fileHelpText').textContent = 'Archivos adjuntos (opcional, máx. 8 MB en total por tarjeta)';
+  document.getElementById('btnSaveNew').textContent = 'Publicar tarjeta';
   document.getElementById('formTitle').value = '';
   document.getElementById('formBody').value = '';
   document.getElementById('formFiles').value = '';
@@ -492,6 +576,28 @@ function openNew(){
   document.getElementById('newAuthorInline').classList.remove('show');
   document.getElementById('newOverlay').classList.add('open');
 }
+
+function openEdit(card){
+  editingId = card.id;
+  populateCatSelect();
+  populateAuthorSelect();
+  document.getElementById('formHeading').textContent = 'Editar tarjeta';
+  document.getElementById('authorFieldLabel').textContent = 'Editado por (tu nombre)';
+  document.getElementById('fileHelpText').textContent = 'Agregar más archivos (opcional, se suman a los existentes, máx. 8 MB en total)';
+  document.getElementById('btnSaveNew').textContent = 'Guardar cambios';
+  document.getElementById('formTitle').value = card.title;
+  document.getElementById('formBody').value = card.body;
+  document.getElementById('formFiles').value = '';
+  document.getElementById('newCatName').value = '';
+  document.getElementById('newAuthorName').value = '';
+  document.getElementById('formMsg').textContent = '';
+  document.getElementById('newCatInline').classList.remove('show');
+  document.getElementById('newAuthorInline').classList.remove('show');
+  document.getElementById('formCat').value = card.catId;
+  closeDetail();
+  document.getElementById('newOverlay').classList.add('open');
+}
+
 function closeNew(){ document.getElementById('newOverlay').classList.remove('open'); }
 document.getElementById('btnOpenNew').onclick = openNew;
 document.getElementById('newClose').onclick = closeNew;
@@ -505,11 +611,11 @@ document.getElementById('btnSaveNew').onclick = async () => {
   const newCatName = document.getElementById('newCatName').value.trim();
   const authorSel = document.getElementById('formAuthor').value;
   const newAuthorName = document.getElementById('newAuthorName').value.trim();
-  const author = authorSel === '__new__' ? newAuthorName : authorSel;
+  const personName = authorSel === '__new__' ? newAuthorName : authorSel;
   const msg = document.getElementById('formMsg');
   const btn = document.getElementById('btnSaveNew');
 
-  if(!title || !author || !bodyText){
+  if(!title || !personName || !bodyText){
     msg.textContent = 'Completa título, tu nombre y el contenido.';
     return;
   }
@@ -520,7 +626,6 @@ document.getElementById('btnSaveNew').onclick = async () => {
 
   const fd = new FormData();
   fd.append('title', title);
-  fd.append('author', author);
   fd.append('body', bodyText);
   fd.append('catId', catSel);
   if(catSel === '__new__') fd.append('newCategoryName', newCatName);
@@ -528,13 +633,28 @@ document.getElementById('btnSaveNew').onclick = async () => {
   for(const f of files) fd.append('files', f);
 
   btn.disabled = true;
-  msg.textContent = 'Publicando...';
+
   try{
-    const res = await fetch('/api/cards', { method:'POST', body: fd });
+    let res;
+    if(editingId){
+      fd.append('editor', personName);
+      msg.textContent = 'Guardando cambios...';
+      res = await fetch(`/api/cards/${editingId}`, { method:'PUT', body: fd });
+    } else {
+      fd.append('author', personName);
+      msg.textContent = 'Publicando...';
+      res = await fetch('/api/cards', { method:'POST', body: fd });
+    }
     const data = await res.json();
     if(!res.ok) throw new Error(data.error || 'Error desconocido');
-    cards.push(data.card);
-    categories = data.categories;
+
+    if(editingId){
+      const idx = cards.findIndex(c => c.id === editingId);
+      if(idx !== -1) cards[idx] = data.card; else cards.push(data.card);
+    } else {
+      cards.push(data.card);
+    }
+    categories = data.categories || categories;
     authors = data.authors || authors;
     activeCat = data.card.catId;
     closeNew();
