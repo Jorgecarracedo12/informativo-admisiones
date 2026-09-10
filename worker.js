@@ -15,9 +15,6 @@ const DEFAULT_CATEGORIES = [
 
 const MAX_ATTACHMENTS_BYTES = 8 * 1024 * 1024; // 8 MB en crudo por tarjeta
 
-// Se completa cuando Jorge suba el logo institucional (como data URI base64).
-const LOGO_DATA_URI = '';
-
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
@@ -84,6 +81,15 @@ async function deleteCard(env, id) {
   await env.TABLERO_KV.delete('card:' + id);
 }
 
+async function replaceSummaryInIndex(env, card) {
+  const index = await getCardIndex(env);
+  const idx = index.findIndex((c) => c.id === card.id);
+  const summary = toSummary(card);
+  if (idx === -1) index.push(summary); else index[idx] = summary;
+  await saveCardIndex(env, index);
+  return summary;
+}
+
 function toSummary(card) {
   return {
     id: card.id,
@@ -91,9 +97,21 @@ function toSummary(card) {
     title: card.title,
     author: card.author,
     date: card.date,
+    pinned: !!card.pinned,
+    lastEditedBy: card.lastEditedBy || null,
+    lastEditedAt: card.lastEditedAt || null,
     excerpt: excerpt(card.body, 110),
     attachments: card.attachments.map((a) => ({ name: a.name, ext: a.ext, size: a.size })),
   };
+}
+
+async function trackAuthor(env, name) {
+  const authors = await getAuthors(env);
+  if (!authors.includes(name)) {
+    authors.push(name);
+    await saveAuthors(env, authors);
+  }
+  return authors;
 }
 
 export default {
@@ -108,7 +126,7 @@ export default {
         const categories = await getCategories(env);
         const cards = await getCardIndex(env);
         const authors = await getAuthors(env);
-        return json({ categories, cards, authors, logoUrl: LOGO_DATA_URI || null });
+        return json({ categories, cards, authors });
       }
 
       // POST /api/categories — crear categoría
@@ -122,6 +140,19 @@ export default {
         categories.push({ id, name, color: nextColor(categories) });
         await saveCategories(env, categories);
         return json({ categories, newId: id });
+      }
+
+      // PUT /api/categories/reorder — guardar nuevo orden (revisar ANTES del match genérico :id)
+      if (path === '/api/categories/reorder' && method === 'PUT') {
+        const body = await request.json();
+        const order = Array.isArray(body.order) ? body.order : [];
+        const categories = await getCategories(env);
+        const byId = new Map(categories.map((c) => [c.id, c]));
+        const reordered = order.filter((id) => byId.has(id)).map((id) => byId.get(id));
+        // por si algún id existente no vino en 'order', lo agregamos al final para no perderlo
+        categories.forEach((c) => { if (!order.includes(c.id)) reordered.push(c); });
+        await saveCategories(env, reordered);
+        return json({ categories: reordered });
       }
 
       // PUT /api/categories/:id — renombrar categoría
@@ -140,7 +171,27 @@ export default {
         return json({ categories });
       }
 
-      // GET /api/cards — listado liviano (alias de /api/data para las tarjetas)
+      // DELETE /api/categories/:id — eliminar categoría (solo si no tiene tarjetas)
+      if (catMatch && method === 'DELETE') {
+        const id = decodeURIComponent(catMatch[1]);
+        const categories = await getCategories(env);
+        const cat = categories.find((c) => c.id === id);
+        if (!cat) return json({ error: 'Categoría no encontrada.' }, 404);
+
+        const cardIndex = await getCardIndex(env);
+        const count = cardIndex.filter((c) => c.catId === id).length;
+        if (count > 0) {
+          return json({
+            error: `Esta categoría tiene ${count} tarjeta(s). Edítalas y muévelas a otra categoría antes de eliminarla.`,
+          }, 400);
+        }
+
+        const filtered = categories.filter((c) => c.id !== id);
+        await saveCategories(env, filtered);
+        return json({ categories: filtered });
+      }
+
+      // GET /api/cards — listado liviano
       if (path === '/api/cards' && method === 'GET') {
         const cards = await getCardIndex(env);
         return json({ cards });
@@ -200,6 +251,9 @@ export default {
           id: crypto.randomUUID(),
           catId, title, author, body: bodyText,
           date: new Date().toISOString().slice(0, 10),
+          pinned: false,
+          lastEditedBy: null,
+          lastEditedAt: null,
           attachments,
         };
         await saveCard(env, card);
@@ -209,22 +263,87 @@ export default {
         index.push(summary);
         await saveCardIndex(env, index);
 
-        const authors = await getAuthors(env);
-        if (!authors.includes(author)) {
-          authors.push(author);
-          await saveAuthors(env, authors);
-        }
+        const authors = await trackAuthor(env, author);
 
         return json({ card: summary, categories, authors });
       }
 
-      // GET /api/cards/:id — detalle completo (con adjuntos)
       const cardMatch = path.match(/^\/api\/cards\/([^/]+)$/);
+      const cardPinMatch = path.match(/^\/api\/cards\/([^/]+)\/pin$/);
+
+      // GET /api/cards/:id — detalle completo (con adjuntos)
       if (cardMatch && method === 'GET') {
         const id = decodeURIComponent(cardMatch[1]);
         const card = await getCard(env, id);
         if (!card) return json({ error: 'Tarjeta no encontrada.' }, 404);
         return json({ card });
+      }
+
+      // PUT /api/cards/:id — editar tarjeta existente
+      if (cardMatch && method === 'PUT') {
+        const id = decodeURIComponent(cardMatch[1]);
+        const existing = await getCard(env, id);
+        if (!existing) return json({ error: 'Tarjeta no encontrada.' }, 404);
+
+        const form = await request.formData();
+        const title = (form.get('title') || '').toString().trim();
+        const editor = (form.get('editor') || '').toString().trim();
+        const bodyText = (form.get('body') || '').toString().trim();
+        let catId = (form.get('catId') || '').toString();
+        const newCategoryName = (form.get('newCategoryName') || '').toString().trim();
+
+        if (!title || !editor || !bodyText) {
+          return json({ error: 'Título, tu nombre y el contenido son obligatorios.' }, 400);
+        }
+
+        const categories = await getCategories(env);
+
+        if (catId === '__new__') {
+          if (!newCategoryName) {
+            return json({ error: 'Escribe un nombre para la nueva categoría.' }, 400);
+          }
+          const newId = 'cat_' + Date.now();
+          categories.push({ id: newId, name: newCategoryName, color: nextColor(categories) });
+          await saveCategories(env, categories);
+          catId = newId;
+        } else if (!categories.find((c) => c.id === catId)) {
+          return json({ error: 'Categoría inválida.' }, 400);
+        }
+
+        const newFiles = form.getAll('files').filter((f) => f instanceof File && f.size > 0);
+        const existingBytes = existing.attachments.reduce((sum, a) => sum + a.size, 0);
+        const newBytes = newFiles.reduce((sum, f) => sum + f.size, 0);
+        if (existingBytes + newBytes > MAX_ATTACHMENTS_BYTES) {
+          const maxMb = (MAX_ATTACHMENTS_BYTES / (1024 * 1024)).toFixed(0);
+          return json({
+            error: `Los archivos adjuntos suman demasiado (máximo ${maxMb} MB por tarjeta). Reduce el tamaño de lo nuevo que agregas.`,
+          }, 400);
+        }
+
+        for (const file of newFiles) {
+          const safeName = sanitizeFilename(file.name);
+          const ext = safeName.includes('.') ? safeName.split('.').pop().toUpperCase().slice(0, 4) : 'FILE';
+          const buf = await file.arrayBuffer();
+          existing.attachments.push({
+            name: file.name,
+            ext,
+            size: file.size,
+            mimeType: file.type || 'application/octet-stream',
+            dataBase64: arrayBufferToBase64(buf),
+          });
+        }
+
+        existing.title = title;
+        existing.body = bodyText;
+        existing.catId = catId;
+        existing.lastEditedBy = editor;
+        existing.lastEditedAt = new Date().toISOString().slice(0, 10);
+
+        await saveCard(env, existing);
+        const summary = await replaceSummaryInIndex(env, existing);
+        const authors = await trackAuthor(env, editor);
+
+        return json({ card: summary, categories, authors });
       }
 
       // DELETE /api/cards/:id — eliminar tarjeta
@@ -237,6 +356,17 @@ export default {
         await saveCardIndex(env, index);
         await deleteCard(env, id);
         return json({ ok: true });
+      }
+
+      // POST /api/cards/:id/pin — fijar/desfijar tarjeta
+      if (cardPinMatch && method === 'POST') {
+        const id = decodeURIComponent(cardPinMatch[1]);
+        const card = await getCard(env, id);
+        if (!card) return json({ error: 'Tarjeta no encontrada.' }, 404);
+        card.pinned = !card.pinned;
+        await saveCard(env, card);
+        const summary = await replaceSummaryInIndex(env, card);
+        return json({ card: summary });
       }
 
       // Cualquier otra ruta /api/* que no exista
